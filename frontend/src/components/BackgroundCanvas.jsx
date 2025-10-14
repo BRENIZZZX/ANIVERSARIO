@@ -1,194 +1,135 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react';
 
 const BackgroundCanvas = () => {
-  // Referência para o elemento canvas
-  const canvasRef = useRef(null)
-  // Estado para controlar o modo atual (flowers ou hearts)
-  const [mode, setMode] = useState('flowers')
-  // Referência para o ID da animação (para poder cancelar)
-  const animationRef = useRef(null)
-  // Array para armazenar as partículas
-  const particlesRef = useRef([])
+  const canvasRef = useRef(null);
 
-  // Classe para representar uma partícula (flor ou coração)
-  class Particle {
-    constructor(canvas, type) {
-      this.canvas = canvas
-      this.type = type // 'flower' ou 'heart'
-      this.reset() // Inicializa posição e propriedades
-    }
-
-    // Reseta a partícula para uma nova posição inicial
-    reset() {
-      this.x = Math.random() * this.canvas.width // Posição X aleatória
-      this.y = -50 // Começa acima da tela
-      this.size = Math.random() * 20 + 10 // Tamanho entre 10 e 30
-      this.speed = Math.random() * 2 + 1 // Velocidade entre 1 e 3
-      this.rotation = 0 // Rotação inicial
-      this.rotationSpeed = (Math.random() - 0.5) * 0.1 // Velocidade de rotação
-      this.opacity = Math.random() * 0.7 + 0.3 // Opacidade entre 0.3 e 1
-      
-      // Cores específicas para cada tipo
-      if (this.type === 'flower') {
-        this.color = `rgba(236, 72, 153, ${this.opacity})` // Rosa
-      } else {
-        this.color = `rgba(239, 68, 68, ${this.opacity})` // Vermelho para corações
-      }
-    }
-
-    // Atualiza a posição e rotação da partícula
-    update() {
-      this.y += this.speed // Move para baixo
-      this.rotation += this.rotationSpeed // Rotaciona
-      
-      // Se saiu da tela, reseta para o topo
-      if (this.y > this.canvas.height + 50) {
-        this.reset()
-      }
-    }
-
-    // Desenha a partícula no canvas
-    draw(ctx) {
-      ctx.save() // Salva o estado atual do contexto
-      
-      // Move o contexto para a posição da partícula
-      ctx.translate(this.x, this.y)
-      ctx.rotate(this.rotation)
-      
-      ctx.fillStyle = this.color
-      ctx.strokeStyle = this.color
-      ctx.lineWidth = 2
-      
-      if (this.type === 'flower') {
-        // Desenha uma flor simples (5 pétalas)
-        for (let i = 0; i < 5; i++) {
-          ctx.save()
-          ctx.rotate((i * Math.PI * 2) / 5) // Rotaciona para cada pétala
-          
-          // Desenha pétala como elipse
-          ctx.beginPath()
-          ctx.ellipse(0, -this.size/2, this.size/4, this.size/2, 0, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.restore()
-        }
-        
-        // Centro da flor
-        ctx.beginPath()
-        ctx.arc(0, 0, this.size/6, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`
-        ctx.fill()
-        
-      } else {
-        // Desenha um coração
-        const size = this.size / 2
-        ctx.beginPath()
-        
-        // Lado esquerdo do coração
-        ctx.arc(-size/4, -size/4, size/4, 0, Math.PI * 2)
-        // Lado direito do coração
-        ctx.arc(size/4, -size/4, size/4, 0, Math.PI * 2)
-        
-        ctx.fill()
-        
-        // Parte inferior do coração (triângulo)
-        ctx.beginPath()
-        ctx.moveTo(-size/2, -size/8)
-        ctx.lineTo(0, size/2)
-        ctx.lineTo(size/2, -size/8)
-        ctx.closePath()
-        ctx.fill()
-      }
-      
-      ctx.restore() // Restaura o estado do contexto
-    }
-  }
-
-  // useEffect para configurar o canvas e iniciar a animação
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let particles = [];
+    let isFlowers = true;
 
-    const ctx = canvas.getContext('2d')
-    
-    // Função para redimensionar o canvas
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    
-    resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
 
-    // Cria partículas iniciais
-    const createParticles = (type, count = 15) => {
-      const particles = []
-      for (let i = 0; i < count; i++) {
-        particles.push(new Particle(canvas, type))
+    const createParticle = () => ({
+      x: Math.random() * canvas.width,
+      y: canvas.height + 50,
+      size: Math.random() * 25 + 15,
+      speedX: (Math.random() - 0.5) * 1,
+      speedY: -(Math.random() * 2 + 1),
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 3,
+      opacity: Math.random() * 0.4 + 0.2
+    });
+
+    const drawFlower = (ctx, x, y, size, rotation) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation * Math.PI / 180);
+      
+      // Pétalas
+      for (let i = 0; i < 6; i++) {
+        ctx.save();
+        ctx.rotate((i * 60) * Math.PI / 180);
+        ctx.beginPath();
+        ctx.ellipse(0, -size/2, size/3, size/2, 0, 0, 2 * Math.PI);
+        ctx.fillStyle = '#D16D85';
+        ctx.fill();
+        ctx.restore();
       }
-      return particles
-    }
+      
+      // Centro
+      ctx.beginPath();
+      ctx.arc(0, 0, size/5, 0, 2 * Math.PI);
+      ctx.fillStyle = '#E8A4B8';
+      ctx.fill();
+      
+      ctx.restore();
+    };
 
-    // Inicializa com flores
-    particlesRef.current = createParticles('flower')
+    const drawHeart = (ctx, x, y, size, rotation) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation * Math.PI / 180);
+      ctx.scale(size/20, size/20);
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 3);
+      ctx.bezierCurveTo(-10, -5, -20, -5, -10, 0);
+      ctx.bezierCurveTo(-10, -5, 0, -15, 0, -5);
+      ctx.bezierCurveTo(0, -15, 10, -5, 10, 0);
+      ctx.bezierCurveTo(20, -5, 10, -5, 0, 3);
+      ctx.fillStyle = '#D16D85';
+      ctx.fill();
+      
+      ctx.restore();
+    };
 
-    // Função de animação principal
     const animate = () => {
-      // Limpa o canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Atualiza e desenha cada partícula
-      particlesRef.current.forEach(particle => {
-        particle.update()
-        particle.draw(ctx)
-      })
+      particles.forEach((particle, index) => {
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
+        particle.rotation += particle.rotationSpeed;
+        
+        // Recriar partícula quando sair da tela
+        if (particle.y < -50) {
+          particles[index] = createParticle();
+        }
+        if (particle.x < -50) particle.x = canvas.width + 50;
+        if (particle.x > canvas.width + 50) particle.x = -50;
+        
+        ctx.globalAlpha = particle.opacity;
+        
+        if (isFlowers) {
+          drawFlower(ctx, particle.x, particle.y, particle.size, particle.rotation);
+        } else {
+          drawHeart(ctx, particle.x, particle.y, particle.size, particle.rotation);
+        }
+      });
       
-      // Solicita o próximo frame de animação
-      animationRef.current = requestAnimationFrame(animate)
-    }
+      ctx.globalAlpha = 1;
+      animationId = requestAnimationFrame(animate);
+    };
 
-    animate() // Inicia a animação
-
-    // Cleanup function - executa quando o componente é desmontado
-    return () => {
-      window.removeEventListener('resize', resizeCanvas)
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
+    const init = () => {
+      resizeCanvas();
+      particles = [];
+      for (let i = 0; i < 20; i++) {
+        const particle = createParticle();
+        particle.y = Math.random() * canvas.height;
+        particles.push(particle);
       }
-    }
-  }, []) // Executa apenas uma vez ao montar
+      animate();
+    };
 
-  // useEffect para alternar entre modos a cada 10 segundos
-  useEffect(() => {
+    init();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Alternar entre flores e corações a cada 10 segundos
     const interval = setInterval(() => {
-      setMode(prevMode => {
-        const newMode = prevMode === 'flowers' ? 'hearts' : 'flowers'
-        
-        // Atualiza o tipo das partículas existentes com fade
-        particlesRef.current.forEach((particle, index) => {
-          setTimeout(() => {
-            particle.type = newMode === 'flowers' ? 'flower' : 'heart'
-            particle.reset() // Reseta para aplicar novas cores
-          }, index * 100) // Delay escalonado para efeito suave
-        })
-        
-        return newMode
-      })
-    }, 10000) // 10 segundos
+      isFlowers = !isFlowers;
+    }, 10000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationId);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      id="background-canvas"
-      className="fixed inset-0 -z-10 pointer-events-none"
-      style={{ 
-        background: 'linear-gradient(135deg, #fce7f3 0%, #e9d5ff 100%)',
-        transition: 'opacity 1s ease-in-out' // Transição suave para mudanças
-      }}
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ opacity: 0.3 }}
     />
-  )
-}
+  );
+};
 
-export default BackgroundCanvas
+export default BackgroundCanvas;

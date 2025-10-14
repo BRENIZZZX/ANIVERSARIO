@@ -1,157 +1,113 @@
-import React from 'react'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const Profile = ({ user, onLogout }) => {
-  // Função para formatar data de criação da conta
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Data não disponível'
+const Profile = () => {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
     
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('pt-BR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    } catch (error) {
-      return 'Data inválida'
+    if (!token || !userData) {
+      navigate('/login');
+      return;
     }
+    
+    setUser(JSON.parse(userData));
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        
-        {/* Card principal do perfil */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden">
-          
-          {/* Header do perfil com gradiente */}
-          <div className="bg-gradient-to-r from-rosa-primary to-lilas p-8 text-white text-center">
-            {/* Avatar */}
-            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
-              👤
-            </div>
-            
-            {/* Nome do usuário */}
-            <h1 className="text-3xl font-bold mb-2">
-              Olá, {user?.username || 'Usuário'}!
-            </h1>
-            
-            <p className="text-white/80">
-              Bem-vindo ao seu perfil no Site Rosa
-            </p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="max-w-2xl w-full space-y-8 animate-zoom-in">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce-slow">👤</div>
+          <h2 className="text-4xl font-bold text-white mb-2 animate-float">Meu Perfil</h2>
+          <p className="text-rosa-light">Bem-vindo ao Site Rosa!</p>
+        </div>
 
-          {/* Conteúdo do perfil */}
-          <div className="p-8">
-            
-            {/* Informações do usuário */}
-            <div className="space-y-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Suas Informações
-              </h2>
-              
-              {/* Card de informação - Nome de usuário */}
-              <div className="bg-rosa-light/30 rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Nome de Usuário
-                </label>
-                <p className="text-lg font-semibold text-gray-800">
-                  {user?.username || 'Não informado'}
-                </p>
-              </div>
-              
-              {/* Card de informação - Email */}
-              <div className="bg-lilas-light/30 rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Email
-                </label>
-                <p className="text-lg font-semibold text-gray-800">
-                  {user?.email || 'Não informado'}
-                </p>
-              </div>
-              
-              {/* Card de informação - Data de cadastro */}
-              <div className="bg-rosa-light/30 rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Membro desde
-                </label>
-                <p className="text-lg font-semibold text-gray-800">
-                  {formatDate(user?.createdAt)}
-                </p>
-              </div>
-            </div>
-
-            {/* Seção de estatísticas */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Estatísticas
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Estatística 1 */}
-                <div className="bg-gradient-to-br from-rosa-primary to-rosa-secondary text-white rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold mb-1">5</div>
-                  <div className="text-sm opacity-90">Logins com QR</div>
-                </div>
-                
-                {/* Estatística 2 */}
-                <div className="bg-gradient-to-br from-lilas to-rosa-primary text-white rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold mb-1">12</div>
-                  <div className="text-sm opacity-90">Conteúdos Vistos</div>
-                </div>
-                
-                {/* Estatística 3 */}
-                <div className="bg-gradient-to-br from-rosa-secondary to-lilas text-white rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold mb-1">3</div>
-                  <div className="text-sm opacity-90">Favoritos</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Seção de ações */}
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Ações da Conta
-              </h2>
-              
-              {/* Botões de ação */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                
-                {/* Botão de editar perfil (placeholder) */}
-                <button className="flex-1 bg-gradient-to-r from-rosa-primary to-rosa-secondary text-white py-3 px-6 rounded-lg font-semibold hover:shadow-lg transition-all">
-                  ✏️ Editar Perfil
-                </button>
-                
-                {/* Botão de configurações (placeholder) */}
-                <button className="flex-1 border-2 border-rosa-primary text-rosa-primary py-3 px-6 rounded-lg font-semibold hover:bg-rosa-primary hover:text-white transition-all">
-                  ⚙️ Configurações
-                </button>
-              </div>
-              
-              {/* Botão de logout */}
-              <button 
-                onClick={onLogout}
-                className="w-full border-2 border-red-400 text-red-500 py-3 px-6 rounded-lg font-semibold hover:bg-red-500 hover:text-white transition-all"
-              >
-                🚪 Sair da Conta
-              </button>
-            </div>
-
-            {/* Seção de dicas */}
-            <div className="mt-8 p-6 bg-gradient-to-r from-rosa-light to-lilas-light rounded-lg">
-              <h3 className="text-lg font-bold text-gray-800 mb-3">
-                💡 Dica do Site Rosa
+        <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30 hover:scale-105 transition-transform duration-300">
+          <div className="space-y-6">
+            <div className="text-center animate-fade-in">
+              <div className="text-4xl mb-4 animate-heart-beat">💖</div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Olá, {user.name}!
               </h3>
-              <p className="text-gray-700">
-                Você sabia que pode usar o login com QR Code para acessar sua conta de forma mais rápida e segura? 
-                Experimente na próxima vez que fizer login!
+              <p className="text-rosa-light">
+                Login realizado com sucesso via {localStorage.getItem('loginMethod') || 'formulário'}
               </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white/10 rounded-lg p-4 hover:scale-105 transition-transform">
+                <h4 className="font-semibold text-white mb-2">📧 Email</h4>
+                <p className="text-rosa-light">{user.email}</p>
+              </div>
+              
+              <div className="bg-white/10 rounded-lg p-4 hover:scale-105 transition-transform">
+                <h4 className="font-semibold text-white mb-2">🆔 ID</h4>
+                <p className="text-rosa-light">#{user.id}</p>
+              </div>
+            </div>
+
+            <div className="bg-white/10 rounded-lg p-6 animate-fade-in">
+              <h4 className="font-semibold text-white mb-4 text-center">🎉 Parabéns!</h4>
+              <p className="text-rosa-light text-center mb-4">
+                Você testou com sucesso o sistema de login do Site Rosa!
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="hover:scale-110 transition-transform">
+                  <div className="text-2xl mb-1">✅</div>
+                  <p className="text-xs text-rosa-light">Login</p>
+                </div>
+                <div className="hover:scale-110 transition-transform">
+                  <div className="text-2xl mb-1">🔐</div>
+                  <p className="text-xs text-rosa-light">JWT</p>
+                </div>
+                <div className="hover:scale-110 transition-transform">
+                  <div className="text-2xl mb-1">📱</div>
+                  <p className="text-xs text-rosa-light">QR Code</p>
+                </div>
+                <div className="hover:scale-110 transition-transform">
+                  <div className="text-2xl mb-1">🌸</div>
+                  <p className="text-xs text-rosa-light">Rosa</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-rosa-primary hover:bg-rosa-dark text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105"
+              >
+                🔄 Atualizar
+              </button>
+              <button
+                onClick={handleLogout}
+                className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 border border-white/30"
+              >
+                🚪 Sair
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

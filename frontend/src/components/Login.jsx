@@ -1,164 +1,120 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import QRCodeModal from './QRCodeModal'
-import axios from 'axios'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import QRCodeModal from './QRCodeModal';
 
-const Login = ({ onLogin }) => {
-  // Estados para o formulário de login tradicional
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  
-  // Estados para controle da UI
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [showQRModal, setShowQRModal] = useState(false)
+const Login = () => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showQRModal, setShowQRModal] = useState(false);
+  const navigate = useNavigate();
 
-  // Função para lidar com mudanças nos inputs
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  // Função para login tradicional (email + senha)
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     try {
-      // Faz requisição para o backend
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
-        email: formData.email,
-        password: formData.password
-      })
-
-      // Se login bem-sucedido, chama função de login do App
-      if (response.data.token) {
-        onLogin(response.data.token, response.data.user)
-      }
+      const response = await axios.post('http://localhost:8080/api/auth/login', formData);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/profile');
     } catch (err) {
-      // Trata erros de autenticação
-      if (err.response?.status === 401) {
-        setError('Email ou senha incorretos')
-      } else if (err.response?.status === 404) {
-        setError('Usuário não encontrado')
-      } else {
-        setError('Erro ao fazer login. Tente novamente.')
-      }
+      setError(err.response?.data?.error || 'Erro ao fazer login');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Função para abrir modal do QR Code
-  const handleQRLogin = () => {
-    setShowQRModal(true)
-  }
-
-  // Função chamada quando QR Code é aprovado
-  const handleQRSuccess = (token, userData) => {
-    setShowQRModal(false)
-    onLogin(token, userData)
-  }
+  const handleQRSuccess = (authData) => {
+    localStorage.setItem('token', authData.jwt);
+    localStorage.setItem('user', JSON.stringify(authData.user));
+    setShowQRModal(false);
+    navigate('/profile');
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        
-        {/* Card principal de login */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8">
-          
-          {/* Cabeçalho */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-rosa-primary to-lilas rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
-              🌸
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Entrar</h2>
-            <p className="text-gray-600">Acesse sua conta no Site Rosa</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h2 className="text-4xl font-bold text-white mb-2">Entrar</h2>
+          <p className="text-rosa-light">Acesse sua conta no Site Rosa</p>
+        </div>
 
-          {/* Mensagem de erro */}
+        <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/30 hover:scale-105 transition-transform duration-300 animate-zoom-in">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-100 text-sm">
               {error}
             </div>
           )}
 
-          {/* Formulário de login */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Campo de email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-white text-sm font-medium mb-2">
                 Email
               </label>
               <input
                 type="email"
-                id="email"
                 name="email"
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none input-rosa transition-all"
+                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-rosa-light focus:outline-none focus:ring-2 focus:ring-rosa-primary focus:border-transparent transition-all hover:scale-105"
                 placeholder="seu@email.com"
               />
             </div>
 
-            {/* Campo de senha */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-white text-sm font-medium mb-2">
                 Senha
               </label>
               <input
                 type="password"
-                id="password"
                 name="password"
                 value={formData.password}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none input-rosa transition-all"
+                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-rosa-light focus:outline-none focus:ring-2 focus:ring-rosa-primary focus:border-transparent transition-all hover:scale-105"
                 placeholder="••••••••"
               />
             </div>
 
-            {/* Botão de login tradicional */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-rosa text-white py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-rosa-primary to-lilas text-white py-3 px-4 rounded-lg font-medium hover:from-rosa-dark hover:to-lilas focus:outline-none focus:ring-2 focus:ring-rosa-primary focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-50 hover:scale-105 animate-zoom-in"
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
 
-          {/* Divisor */}
-          <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-gray-500 text-sm">ou</span>
-            <div className="flex-1 border-t border-gray-300"></div>
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/30"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-transparent text-rosa-light">ou</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowQRModal(true)}
+              className="mt-4 w-full bg-white/10 text-white py-3 px-4 rounded-lg font-medium hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 border border-white/30 hover:scale-105 animate-zoom-in"
+            >
+              📱 Entrar com QR Code
+            </button>
           </div>
 
-          {/* Botão de login com QR Code */}
-          <button
-            onClick={handleQRLogin}
-            className="w-full border-2 border-rosa-primary text-rosa-primary py-3 rounded-lg font-semibold hover:bg-rosa-primary hover:text-white transition-all flex items-center justify-center space-x-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
-            <span>Entrar com QR Code</span>
-          </button>
-
-          {/* Link para cadastro */}
-          <div className="text-center mt-6">
-            <p className="text-gray-600">
+          <div className="mt-6 text-center">
+            <p className="text-rosa-light">
               Não tem uma conta?{' '}
-              <Link to="/signup" className="text-rosa-primary font-semibold hover:text-rosa-secondary transition-colors">
+              <Link to="/signup" className="text-white font-medium hover:text-rosa-light transition-colors hover:scale-105 inline-block">
                 Cadastre-se
               </Link>
             </p>
@@ -166,7 +122,6 @@ const Login = ({ onLogin }) => {
         </div>
       </div>
 
-      {/* Modal do QR Code */}
       {showQRModal && (
         <QRCodeModal
           onClose={() => setShowQRModal(false)}
@@ -174,7 +129,7 @@ const Login = ({ onLogin }) => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
